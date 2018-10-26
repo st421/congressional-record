@@ -1,19 +1,24 @@
 from __future__ import absolute_import
-#import requests
-from builtins import str
-from builtins import object
-import certifi
-import urllib3.contrib.pyopenssl
-urllib3.contrib.pyopenssl.inject_into_urllib3()
-from urllib3 import PoolManager, Retry, Timeout
+
+import json
+import logging
 import os
-from datetime import datetime,date,timedelta
+#import requests
+from builtins import object, str
+from datetime import date, datetime, timedelta
 from time import sleep
 from zipfile import ZipFile
-from .cr_parser import ParseCRDir, ParseCRFile
-import json
+
+import certifi
+import urllib3.contrib.pyopenssl
+from urllib3 import PoolManager, Retry, Timeout
+
 from pyelasticsearch import ElasticSearch, bulk_chunks
-import logging
+
+from .cr_parser import ParseCRDir, ParseCRFile
+
+urllib3.contrib.pyopenssl.inject_into_urllib3()
+
 
 class Downloader(object):
     """
@@ -185,7 +190,6 @@ class downloadRequest(object):
             logging.info('Wrote {0}'.format(filename))
         else:            
             logging.info('No download for {0} and terminating with unexpected condition.\n'.format(url))
-            
 
     
 class GovInfoDL(object):
@@ -215,6 +219,7 @@ class GovInfoDL(object):
         else:
             self.outpath = 'output'
         self.download_day(day,self.outpath)
+
 
 class GovInfoExtract(object):
 
@@ -251,9 +256,3 @@ class GovInfoExtract(object):
         os.remove(abspath)
         self.status += 'deletedZip'
         logging.info('Extractor completed with status {0}'.format(self.status))
-
-
-
-        
-
-        
