@@ -68,13 +68,6 @@ class Downloader(object):
                 logging.warning('Unexpected condition in bulkdownloader')
             day += timedelta(days=1)
 
-    
-    def _repr_args(self, key, value):
-        if isinstance(value, list):
-            value = ','.join(value)
-        return ','.join(['='.join([key,value])])   
-
-
     def __init__(self,start,**kwargs):
         """
         Invoke a Downloader object to get data from
@@ -123,11 +116,8 @@ class Downloader(object):
         """
         self.status = 'idle'
         logging.debug('Downloader object ready with params:')
-        logging.debug([self._repr_args(key, value) for key,value in list(kwargs.items())])
-        if 'outpath' in list(kwargs.keys()):
-            outpath = kwargs['outpath']
-        else:
-            outpath = 'output'
+        logging.debug(json.dumps(kwargs, indent=2))
+        outpath = kwargs.get("outpath", "output")
         if kwargs['do_mode'] == 'es':
             es = ElasticSearch(kwargs['es_url'])
             for chunk in bulk_chunks((es.index_op(crfile.crdoc,id=crfile.crdoc.pop('id')) for crfile
@@ -153,10 +143,7 @@ class Downloader(object):
 
         else:
             return None
-    
-                                                                       
-                            
-        
+
 
 class downloadRequest(object):
 
