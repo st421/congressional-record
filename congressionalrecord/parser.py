@@ -204,7 +204,7 @@ class ParseCRFile(object):
         if matchobj:
             self.doc_title, self.cr_vol, self.cr_num = matchobj.group('title','vol','num')
         else:
-            logging.warn('{0} yields no title, vol, num'.format(
+            logging.warning('{0} yields no title, vol, num'.format(
                 self.access_path))
             self.doc_title, self.cr_vol, self.cr_num = \
               'None','Unknown','Unknown'
