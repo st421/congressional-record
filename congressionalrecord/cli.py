@@ -50,6 +50,12 @@ def main():
         help='Optional path for csv files if using pg do_mode.')
 
     parser.add_argument(
+        '--exclude',
+        nargs='+',
+        choices=['E', 'D', 'H', 'S'],
+        help='Optional list of types of record to exclude.')
+
+    parser.add_argument(
         '--logfile',
         type=str,
         help='Use a particular logfile.',
@@ -64,9 +70,9 @@ def main():
     elif args.do_mode == 'pg':
         cr(args.start,end=args.end,do_mode='yield')
     elif args.do_mode == 'json':
-        dl(args.start,end=args.end,do_mode='json')
+        dl(args.start,end=args.end,do_mode='json',excluded_types=args.exclude)
     elif args.do_mode == 'es':
-        dl(args.start,end=args.end,do_mode='es',es_url=args.es_url,index=args.index)
+        dl(args.start,end=args.end,do_mode='es',es_url=args.es_url,index=args.index,excluded_types=args.exclude)
     else:
         print("Haven't written the hooks for other functionality yet.")
 
