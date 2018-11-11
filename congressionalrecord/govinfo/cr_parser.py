@@ -401,14 +401,14 @@ class ParseCRFile(object):
             'speaker': 'The RECORDER',
             'break_flow': True,
             'special_case': False
-         },
+        },
         'clerk': {
             'patterns': [re_clerk],
             'speaker_re': False,
             'speaker': 'The Clerk',
             'break_flow': True,
             'special_case': False
-         },
+        },
         'linebreak': {
             'patterns': [re_linebreak],
             'speaker_re': False,
@@ -416,7 +416,7 @@ class ParseCRFile(object):
             'break_flow': True,
             'special_case': True,
             'condition': 'emptystr'
-         },
+        },
         'excerpt': {
             'patterns': [re_excerpt],
             'speaker_re': False,
@@ -424,14 +424,14 @@ class ParseCRFile(object):
             'break_flow': True,
             'special_case': True,
             'condition': 'lastspeaker'
-         },
+        },
         'rollcall': {
             'patterns': [re_rollcall],
             'speaker_re': False,
             'speaker': 'None',
             'break_flow': True,
             'special_case': False
-         },
+        },
         'metacharacters': {
             'patterns': [
                 re_timestamp,
@@ -441,21 +441,21 @@ class ParseCRFile(object):
             'speaker': 'None',
             'break_flow': False,
             'special_case': False
-         },
+        },
         'empty_line': {
             'patterns': [r'(^[\s]+$)'],
             'speaker_re': False,
             'speaker': 'None',
             'break_flow': False,
             'special_case': False
-         },
+        },
         'title': {
             'patterns': [re_allcaps],
             'speaker_re': False,
             'speaker': 'None',
             'break_flow': True,
             'special_case': False,
-         }
+        }
     }
 
     def __init__(self, abspath, cr_dir, **kwargs):

@@ -1,26 +1,38 @@
 from __future__ import absolute_import
-#import requests
-from builtins import str
-from builtins import object
-import certifi
-import urllib3.contrib.pyopenssl
-urllib3.contrib.pyopenssl.inject_into_urllib3()
-from urllib3 import PoolManager, Retry, Timeout
+
+import json
+import logging
 import os
-from datetime import datetime,date,timedelta
+#import requests
+from builtins import object, str
+from datetime import date, datetime, timedelta
 from time import sleep
 from zipfile import ZipFile
-from .cr_parser import ParseCRDir, ParseCRFile
-import json
+
+import certifi
+import urllib3.contrib.pyopenssl
+from urllib3 import PoolManager, Retry, Timeout
+
 from pyelasticsearch import ElasticSearch, bulk_chunks
-import logging
+
+from .cr_parser import ParseCRDir, ParseCRFile
+
+urllib3.contrib.pyopenssl.inject_into_urllib3()
+
 
 class Downloader(object):
     """
     Chunks through downloads and is ready to pass
     to elasticsearch or yield json.
     """
-    def bulkdownload(self,start,parse=True,**kwargs):
+    default_exclude = ['FrontMatter', '-Pgnull']
+    def bulkdownload(self,start,parse=True,excluded_types=None,**kwargs):
+        if not excluded_types:
+            excluded_types = []
+        exclude = list(self.default_exclude)
+        for excluded_type in excluded_types:
+            exclude.append("-Pg{}".format(excluded_type))
+
         day = datetime.strptime(start,'%Y-%m-%d')
         if 'end' in list(kwargs.keys()):
             end = kwargs['end']
@@ -44,10 +56,15 @@ class Downloader(object):
                     dir_path = os.path.join(outpath,year_str,dir_str)
                     crdir = ParseCRDir(dir_path)
                     for the_file in os.listdir(os.path.join(dir_path,'html')):
+                        exclude_flag = False
                         parse_path = os.path.join(dir_path,'html',the_file)
-                        if '-PgD' in parse_path or 'FrontMatter' in parse_path or '-Pgnull' in parse_path:
+                        for excluded_type in exclude:
+                            if excluded_type in parse_path:
+                                exclude_flag = True
+                        if exclude_flag:
                             logging.info('Skipping {0}'.format(parse_path))
                         else:
+                            logging.info('Parsing {0}'.format(parse_path))
                             crfile = ParseCRFile(parse_path,crdir)
                             yield crfile
                 except IOError as e:
@@ -55,7 +72,6 @@ class Downloader(object):
             else:
                 logging.warning('Unexpected condition in bulkdownloader')
             day += timedelta(days=1)
-
 
     def __init__(self,start,**kwargs):
         """
@@ -105,11 +121,8 @@ class Downloader(object):
         """
         self.status = 'idle'
         logging.debug('Downloader object ready with params:')
-        logging.debug(','.join(['='.join([key,value]) for key,value in list(kwargs.items())]))
-        if 'outpath' in list(kwargs.keys()):
-            outpath = kwargs['outpath']
-        else:
-            outpath = 'output'
+        logging.debug(json.dumps(kwargs, indent=2))
+        outpath = kwargs.get("outpath", "output")
         if kwargs['do_mode'] == 'es':
             es = ElasticSearch(kwargs['es_url'])
             for chunk in bulk_chunks((es.index_op(crfile.crdoc,id=crfile.crdoc.pop('id')) for crfile
@@ -135,10 +148,7 @@ class Downloader(object):
 
         else:
             return None
-    
-                                                                       
-                            
-        
+
 
 class downloadRequest(object):
 
@@ -180,7 +190,6 @@ class downloadRequest(object):
             logging.info('Wrote {0}'.format(filename))
         else:            
             logging.info('No download for {0} and terminating with unexpected condition.\n'.format(url))
-            
 
     
 class GovInfoDL(object):
@@ -210,6 +219,7 @@ class GovInfoDL(object):
         else:
             self.outpath = 'output'
         self.download_day(day,self.outpath)
+
 
 class GovInfoExtract(object):
 
@@ -246,9 +256,3 @@ class GovInfoExtract(object):
         os.remove(abspath)
         self.status += 'deletedZip'
         logging.info('Extractor completed with status {0}'.format(self.status))
-
-
-
-        
-
-        
