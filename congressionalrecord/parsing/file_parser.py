@@ -1,14 +1,16 @@
 from __future__ import absolute_import
-from builtins import object
-from bs4 import BeautifulSoup
-from io import StringIO, BytesIO
-import os
-from datetime import datetime
-import re
-import xml.etree.cElementTree as ET
-from congressionalrecord.parsing.item_parser import crItem
-import logging
+
 import itertools
+import logging
+import os
+import re
+from builtins import object
+from datetime import datetime
+
+from bs4 import BeautifulSoup
+
+from congressionalrecord.parsing.item_parser import crItem
+
 
 class ParseCRFile(object):
     # Some regex

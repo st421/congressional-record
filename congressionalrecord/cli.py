@@ -1,83 +1,31 @@
-#!/usr/bin/env python
-from __future__ import print_function
-from __future__ import absolute_import
-import os
-import sys
-from .pg_run.pg_cr_bulkwrite import crToPG as cr
-from .downloader import CRDownloader
-import argparse
 import logging
+from datetime import datetime, timedelta
+import click
+from congressionalrecord.cr import LocalCRManager, LocalJsonCRManager
 
-def main():
-    parser = argparse.ArgumentParser(
-        description="Download and parse the text of the \
-        Congressional Record.")
+#FIXME should be able to exclude more than one
 
-    parser.add_argument(
-        'start', type=str,
-        help='The day or first day of Record text \
-        user wants to download. (Format: YYYY-MM-DD)')
-
-    parser.add_argument(
-        'end', type=str,
-        help='The last day in a contiguous series of days \
-        user wants to download. Note the parser skips \
-        days with no activity. (Format: YYYY-MM-DD)')
-
-    parser.add_argument(
-        'do_mode',
-        type=str,
-        choices=['json','es','pg','noparse'],
-        help='json: Store json\n \
-        es: Push to ElasticSearch.\n \
-        pg: Generate flatfiles for Postgres.\n \
-        noparse: Just download the files.')
-
-    parser.add_argument(
-        '--index',
-        type=str,
-        help='If using elasticsearch, this is the index to use.')
-
-    parser.add_argument(
-        '--es_url',
-        type=str,
-        help='If using elasticsearch, this is the URL of the\
-        elasticsearch cluster.')
-
-    parser.add_argument(
-        '--csvpath',
-        type=str,
-        help='Optional path for csv files if using pg do_mode.')
-
-    parser.add_argument(
-        '--exclude',
-        nargs='+',
-        choices=['E', 'D', 'H', 'S'],
-        help='Optional list of types of record to exclude.')
-
-    parser.add_argument(
-        '--logfile',
-        type=str,
-        help='Use a particular logfile.',
-        default='cr2.log')
-
-
-    args = parser.parse_args()
-    logging.basicConfig(filename=args.logfile,level=logging.DEBUG)
-    logging.info('Logging begins')
-    if args.csvpath and args.do_mode == 'pg':
-        cr(args.start, end=args.end, do_mode='yield', csvpath=args.csvpath)
-    elif args.do_mode == 'pg':
-        cr(args.start,end=args.end,do_mode='yield')
-    elif args.do_mode == 'json':
-        dl(args.start,end=args.end,do_mode='json',excluded_types=args.exclude)
-    elif args.do_mode == 'es':
-        dl(args.start,end=args.end,do_mode='es',es_url=args.es_url,index=args.index,excluded_types=args.exclude)
+@click.command()
+@click.option('--start', type=click.DateTime(), default=datetime.strftime(datetime.today(), LocalCRManager.DATE_FORMAT), help='The day or first day of Record text you want to download. (Format: YYYY-MM-DD)')
+@click.option('--end', type=click.DateTime(), default=None, help='The last day in a contiguous series of days user wants to download. Note the parser skips days with no activity. (Format: YYYY-MM-DD)')
+@click.option('--mode', type=click.Choice(['json', 'es', 'pg', 'noparse']), default=None, help='json: Store json\nes: Push to ElasticSearch.\npg: Generate flatfiles for Postgres.\nnoparse: Just download the files.')
+@click.option('--exclude', type=click.Choice(['E', 'D', 'H', 'S']), default=None, help='Optional list of types of record to exclude.')
+def get_and_parse_cr(start, end=None, mode=None, exclude=None):
+    """Download and parse the text of the Congressional Record."""
+    logging.basicConfig(level=logging.DEBUG)
+    if mode == 'json':
+        mgr = LocalJsonCRManager
     else:
-        print("Haven't written the hooks for other functionality yet.")
+        mgr = LocalCRManager
 
-    logging.info('Logging ends')
+    current = start
+    if not end:
+        end = start
+    while current <= end:
+        cr_manager = mgr(current, skip_parsing_for=[exclude] + mgr.DEFAULT_SKIP_PARSING)
+        cr_manager()
+        current += timedelta(days=1)
 
 
 if __name__ == '__main__':
-    main()
+    get_and_parse_cr()

@@ -3,7 +3,7 @@ import re
 import logging
 
 class crItem(object):
-    
+
     def is_break(self,line):
         for pat in self.parent.item_breakers:
             if re.match(pat,line):
