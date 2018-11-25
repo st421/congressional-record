@@ -55,7 +55,8 @@ class LocalCRManager(CRManager):
         self.output_dir = output_dir
 
     def __call__(self):
-        self.extract(self.retriever.get_cr(self.unextracted))
+        if not os.path.isdir(self.html_path):
+            self.extract(self.retriever.get_cr(self.unextracted))
         self.parse()
 
     @property
@@ -65,6 +66,10 @@ class LocalCRManager(CRManager):
     @property
     def unextracted(self):
         return self.filename + ".zip"
+
+    @property
+    def html_path(self):
+        return os.path.join(self.output_path, 'html')
 
     @property
     def output_zip(self):
@@ -90,9 +95,10 @@ class LocalCRManager(CRManager):
             subfolder = os.path.join(self.output_path, self.output_format)
             if not os.path.isdir(subfolder):
                 os.makedirs(subfolder)
-        for html_file in os.listdir(os.path.join(self.output_path, 'html')):
-            parse_path = os.path.join(self.output_path, 'html', html_file)
+        for html_file in os.listdir(self.html_path):
+            parse_path = os.path.join(self.html_path, html_file)
             for skip_str in self.skip_parsing_for:
+                print(skip_str)
                 if skip_str in parse_path:
                     continue
                 else:
