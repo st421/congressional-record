@@ -8,7 +8,7 @@ from datetime import datetime, timedelta
 from zipfile import ZipFile
 from io import BytesIO
 
-from congressionalrecord.parsing.file_parser import ParseCRFile
+from congressionalrecord.parsing.doc import CRHtmlParser
 from congressionalrecord.retriever import CRRetriever
 
 LOG = logging.getLogger(__name__)
@@ -23,7 +23,7 @@ class CRManager(object):
         if not retriever:
             retriever = CRRetriever()
         if not parser_class:
-            parser_class = ParseCRFile
+            parser_class = CRHtmlParser
         if isinstance(day, str):
             day = datetime.strptime(day, self.DATE_FORMAT)
         if not skip_parsing_for:
@@ -50,60 +50,59 @@ class CRManager(object):
 
 class LocalCRManager(CRManager):
 
-    def __init__(self, day, *args, output_dir="output", **kwargs):
+    def __init__(self, day, *args, base_output_dir="output", **kwargs):
         super().__init__(day, *args, **kwargs)
-        self.output_dir = output_dir
+        self.base_output_dir = base_output_dir
 
     def __call__(self):
-        if not os.path.isdir(self.html_path):
-            self.extract(self.retriever.get_cr(self.unextracted))
+        if not os.path.isdir(self.html_dir):
+            self.extract(self.retriever.get_cr(self.filename + ".zip"))
         self.parse()
 
     @property
-    def output_path(self):
-        return os.path.join(self.output_dir, self.filename)
+    def output_dir(self):
+        return os.path.join(self.base_output_dir, self.filename)
 
     @property
-    def unextracted(self):
-        return self.filename + ".zip"
+    def html_dir(self):
+        return os.path.join(self.output_dir, 'html')
 
     @property
-    def html_path(self):
-        return os.path.join(self.output_path, 'html')
+    def mods(self):
+        ''' Load up all metadata for this directory
+         from the mods file.'''
+        mods_path = os.path.join(self.output_dir, 'mods.xml')
+        return open(mods_path, 'r')
 
     @property
-    def output_zip(self):
-        return os.path.join(self.output_dir, self.unextracted)
+    def html(self):
+        ''' Load up all html '''
+        html_files = []
+        for html_file in os.listdir(self.html_dir):
+            html_path = os.path.join(self.html_dir, html_file)
+            for skip_str in self.skip_parsing_for:
+                if skip_str in html_path:
+                    continue
+                else:
+                    html_files.append(open(html_path, 'r'))
+        return html_files
 
     def extract(self, cr_data, **kwargs):
         if cr_data:
-            LOG.info("Extracting data to %s", self.output_path)
+            LOG.info("Extracting data to %s", self.output_dir)
             with ZipFile(BytesIO(cr_data)) as out_data:
                 out_data.extractall(self.output_dir)
         else:
             LOG.info("No data to extract for %s", self.day)
 
-    def get_mods(self, **kwargs):
-        ''' Load up all metadata for this directory
-         from the mods file.'''
-        mods_path = os.path.join(self.output_path, 'mods.xml')
-        with open(mods_path, 'r') as mods_file:
-            return BeautifulSoup(mods_file, "lxml")
-
     def parse(self, **kwargs):
         if self.output_format:
-            subfolder = os.path.join(self.output_path, self.output_format)
+            subfolder = os.path.join(self.output_dir, self.output_format)
             if not os.path.isdir(subfolder):
                 os.makedirs(subfolder)
-        for html_file in os.listdir(self.html_path):
-            parse_path = os.path.join(self.html_path, html_file)
-            for skip_str in self.skip_parsing_for:
-                print(skip_str)
-                if skip_str in parse_path:
-                    continue
-                else:
-                    crfile = ParseCRFile(parse_path, self.output_path)
-                    yield crfile
+        # TODO do something with mods
+        for html_file in self.html:
+            self.parser_class(html_file).parse()
 
 
 class LocalJsonCRManager(LocalCRManager):
@@ -113,5 +112,5 @@ class LocalJsonCRManager(LocalCRManager):
 
     def parse(self, **kwargs):
         for crfile in super().parse():
-            with open(os.path.join(self.output_path, self.output_format, crfile.filepath), 'w') as out_json:
+            with open(os.path.join(self.output_dir, self.output_format, crfile.filepath), 'w') as out_json:
                 json.dump(crfile.crdoc, out_json)

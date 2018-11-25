@@ -13,7 +13,9 @@ setup(
         'beautifulsoup4 >= 4.4.0',
         'lxml >= 3.3.5',
         'requests',
-        'click < 8.0'
+        'click < 8.0',
+        'xmltodict',
+        'jmespath'
         ],
     zip_safe=False
 )

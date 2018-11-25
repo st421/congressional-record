@@ -1,28 +1,11 @@
-from __future__ import absolute_import
+class CRBodyParser(BaseBodyParser):
 
-import itertools
-import logging
-import os
-import re
-from builtins import object
-from datetime import datetime
-
-from bs4 import BeautifulSoup
-
-from congressionalrecord.parsing.item_parser import crItem
-
-
-class ParseCRFile(object):
     # Some regex
     re_time = r'^CREC-(?P<year>[0-9]{4})-(?P<month>[0-9]{2})-(?P<day>[0-9]{2})-.*'
     re_vol = r'^(?P<title>.*); Congressional Record Vol. (?P<vol>[0-9]+), No. (?P<num>[0-9]+)$'
     re_vol_file = r'^\[Congressional Record Volume (?P<vol>[0-9]+), Number (?P<num>[0-9]+)'\
         + r' \((?P<wkday>[A-Za-z]+), (?P<month>[A-Za-z]+) (?P<day>[0-9]+), (?P<year>[0-9]{4})\)\]'
-    re_chamber = r'\[(?P<chamber>[A-Za-z\s]+)\]'
-    re_pages = r'\[Page[s]? (?P<pages>[\w\-]+)\]'
-    re_trail = r'From the Congressional Record Online'\
-        + r' through the Government (Publishing|Printing) Office \[www.gpo.gov\]$'
-    re_rollcall = r'\[Roll(call)?( Vote)? No. \d+.*\]'
+
     re_recorderstart = (r'^\s+(?P<start>'
                         + r'(The (assistant )?legislative clerk read as follows)'
                         + r'|(The nomination considered and confirmed is as follows)'
