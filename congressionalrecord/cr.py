@@ -1,21 +1,12 @@
 from __future__ import absolute_import
-#import requests
-import os
-from zipfile import ZipFile
-from builtins import str
-from builtins import object
-import certifi
-import urllib3.contrib.pyopenssl
-urllib3.contrib.pyopenssl.inject_into_urllib3()
-from urllib3 import PoolManager, Retry, Timeout
-import os
-from datetime import datetime,date,timedelta
-from time import sleep
-from cr_parser import ParseCRFile
+
 import json
-from pyelasticsearch import ElasticSearch, bulk_chunks
-import logging
-from congressionalrecord.retriever import CRRetriever  
+import os
+from datetime import datetime, timedelta
+from zipfile import ZipFile
+
+from congressionalrecord.parsing.file_parser import ParseCRFile
+from congressionalrecord.retriever import CRRetriever
 
 
 class CRManager(object):
@@ -110,7 +101,7 @@ class LocalJsonCRManager(LocalCRManager):
 
     def parse(self, **kwargs):
         for crfile in super().parse():
-            with open(os.path.join(self.output_path, 'json', crfile.filepath), 'w') as out_json:
+            with open(os.path.join(self.output_path, self.output_format, crfile.filepath), 'w') as out_json:
                 json.dump(crfile.crdoc, out_json)
 
 

@@ -6,7 +6,7 @@ import os
 from datetime import datetime
 import re
 import xml.etree.cElementTree as ET
-from .subclasses import crItem
+from congressionalrecord.parsing.item_parser import crItem
 import logging
 import itertools
 

@@ -1,9 +1,5 @@
 from __future__ import absolute_import
 
-import os
-import logging
-from datetime import datetime
-
 import certifi
 import urllib3.contrib.pyopenssl
 from urllib3 import PoolManager, Retry, Timeout
