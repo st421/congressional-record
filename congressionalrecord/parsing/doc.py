@@ -6,24 +6,33 @@ from congressionalrecord.parsing.body import CRBodyParser
 
 class CRHtmlParser(BaseDocParser):
 
-    @property
-    def id(self):
-        return self.filename
-
-    @property
-    def headers(self):
-        return None
-
-    @property
-    def title(self):
-        return BeautifulSoup(self.in_data, "lxml").html.head.title.text
-
     def parse(self, *args, **kwargs):
-        return {
-            "id": self.id,
-            "title": self.title,
-            "content": CRBodyParser().generate_ans(self.in_data, start_tag="html.body.pre")
+        output = {
+            "id": self.doc_id,
         }
+        parsed_body = CRBodyParser().generate_ans(self.in_data, start_tag="pre")
+        parsed_content = []
+        for parsed_item in parsed_body:
+            if parsed_item.get("kind") == "top-level":
+                parsed_item.pop("kind")
+                output.update(parsed_item)
+            else:
+                parsed_content.append(parsed_item)
+        output["content"] = parsed_content
+        return output
+
+
+class CRChamberHtmlParser(CRHtmlParser):
+    pass
+
+
+class CRExtensionsHtmlParser(CRHtmlParser):
+    pass
+
+
+class CRDailyDigestHtmlParser(CRHtmlParser):
+    pass
+
 '''
     def get_header(self):
         """

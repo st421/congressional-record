@@ -8,7 +8,7 @@ from datetime import datetime, timedelta
 from zipfile import ZipFile
 from io import BytesIO
 
-from congressionalrecord.parsing.doc import CRHtmlParser
+from congressionalrecord.parsing.doc import CRHtmlParser, CRChamberHtmlParser, CRDailyDigestHtmlParser, CRExtensionsHtmlParser
 from congressionalrecord.retriever import CRRetriever
 
 LOG = logging.getLogger(__name__)
@@ -18,12 +18,16 @@ class CRManager(object):
     DATE_FORMAT = "%Y-%m-%d"
     CR_PREFIX = "CREC-"
     DEFAULT_SKIP_PARSING = ['-Pgnull', 'FrontMatter']
+    PARSER_CLASSES = {
+        'H': CRChamberHtmlParser,
+        'S': CRChamberHtmlParser,
+        'D': CRDailyDigestHtmlParser,
+        'E': CRExtensionsHtmlParser
+    }
 
-    def __init__(self, day, parser_class=None, retriever=None, *, skip_parsing_for=None, output_format=None, **kwargs):
+    def __init__(self, day, retriever=None, *, skip_parsing_for=None, output_format=None, **kwargs):
         if not retriever:
             retriever = CRRetriever()
-        if not parser_class:
-            parser_class = CRHtmlParser
         if isinstance(day, str):
             day = datetime.strptime(day, self.DATE_FORMAT)
         if not skip_parsing_for:
@@ -32,7 +36,6 @@ class CRManager(object):
         self.skip_parsing_for = skip_parsing_for
         self.output_format = output_format
         self.retriever = retriever
-        self.parser_class = parser_class
         self.day = day
 
     @property
@@ -80,11 +83,12 @@ class LocalCRManager(CRManager):
         html_files = []
         for html_file in os.listdir(self.html_dir):
             html_path = os.path.join(self.html_dir, html_file)
+            skip = False
             for skip_str in self.skip_parsing_for:
                 if skip_str in html_path:
-                    continue
-                else:
-                    html_files.append(open(html_path, 'r'))
+                    skip = True
+            if not skip:
+                html_files.append(open(html_path, 'r'))
         return html_files
 
     def extract(self, cr_data, **kwargs):
@@ -102,7 +106,9 @@ class LocalCRManager(CRManager):
                 os.makedirs(subfolder)
         # TODO do something with mods
         for html_file in self.html:
-            self.parser_class(html_file).parse()
+            for doc_type in self.PARSER_CLASSES:
+                if f"Pg{doc_type}" in html_file.name:
+                    print(json.dumps(self.PARSER_CLASSES.get(doc_type)(html_file).parse(), indent=2))
 
 
 class LocalJsonCRManager(LocalCRManager):

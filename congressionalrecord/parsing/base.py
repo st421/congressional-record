@@ -1,7 +1,8 @@
 import re
+import os
 from bs4 import BeautifulSoup, NavigableString
 from html2ans.base import BaseHtmlAnsParser
-from html2ans.parsers.base import NullParser, BaseElementParser
+from html2ans.parsers.base import NullParser, BaseElementParser, ParseResult
 from html2ans.parsers.text import ParagraphParser
 
 
@@ -17,7 +18,7 @@ class BaseParser(object):
 class BaseDocParser(BaseParser):
 
     def __init__(self, cr_file, *args, **kwargs):
-        self.filename = cr_file.name
+        self.doc_id = os.path.basename(cr_file.name.split(".htm")[0])
         super().__init__(cr_file.read())
 
 
@@ -36,5 +37,20 @@ class RegexElementParser(BaseElementParser):
                 return True
         return False
 
+
+class RegexTopLevelElementParser(RegexElementParser):
+    name = None
+
     def parse(self, element, *args, **kwargs):
-        return self.regex_result
+        return ParseResult({
+            self.name: self.regex_result.group(1),
+            "kind": "top-level"
+        }, True)
+
+
+class RegexParagraphParser(RegexElementParser):
+
+    def parse(self, element, *args, **kwargs):
+        return ParseResult({
+            "text": self.regex_result.group(1)
+        }, True)
