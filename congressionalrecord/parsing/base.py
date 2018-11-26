@@ -25,6 +25,7 @@ class BaseDocParser(BaseParser):
 class RegexElementParser(BaseElementParser):
     applicable_elements = [NavigableString]
     applicable_regex = None
+    regex_el = None
 
     def __init__(self, *args, **kwargs):
         self.regex_result = None
@@ -38,12 +39,16 @@ class RegexElementParser(BaseElementParser):
         return False
 
 
+class RegexNullElementParser(RegexElementParser, NullParser):
+    pass
+
+
 class RegexTopLevelElementParser(RegexElementParser):
     name = None
 
     def parse(self, element, *args, **kwargs):
         return ParseResult({
-            self.name: self.regex_result.group(1),
+            self.name: self.regex_result.group(self.regex_el),
             "kind": "top-level"
         }, True)
 
@@ -52,5 +57,5 @@ class RegexParagraphParser(RegexElementParser):
 
     def parse(self, element, *args, **kwargs):
         return ParseResult({
-            "text": self.regex_result.group(1)
+            "text": self.regex_result.group(self.regex_el)
         }, True)

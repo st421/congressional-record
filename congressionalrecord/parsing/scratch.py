@@ -63,7 +63,6 @@ class CRBodyParser(BaseBodyParser):
                        + r'|(By M(r|rs|s|iss)[\.]? [a-zA-Z]+))'
                        )
     re_clerk = r'^\s+(?P<start>The Clerk (read|designated))'
-    re_allcaps = r'^ \s*(?!([_=]+|-{3,}))(?P<title>([A-Z]+[^a-z]+))$'
     re_linebreak = r'\s+([_=]+|-{5,})(NOTE|END NOTE)?([_=]+|-{5,})*\s*'
     re_excerpt = r'\s+(_{3,4})'
     re_newpage = r'\s*\[\[Page \w+\]\]'
@@ -269,33 +268,6 @@ class CRBodyParser(BaseBodyParser):
                                     'year': header[5], 'chamber': header[6], 'pages': header[7],
                                     'extension': header[8]}
         self.crdoc['doc_title'] = self.doc_title
-
-    def get_title(self):
-        """
-        Throw out empty lines
-        Parse consecutive title-matching strings into a title str
-        Stop on the first line that isn't empty and isn't a title
-        Return the title str if it exists.
-
-        We pretty much assume the first title on the page applies
-        to everything below it
-        """
-
-        title_str = ''
-        for line in self.the_text:
-            if line == u'':
-                pass
-            else:
-                a_match = re.match(self.re_allcaps, line)
-                if a_match:
-                    title_str = ' '.join([title_str, a_match.group('title')])
-                else:
-                    break
-
-        if len(title_str) > 0:
-            return title_str.strip()
-        else:
-            return False
 
     def write_page(self):
         turn = 0
