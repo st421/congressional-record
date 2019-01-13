@@ -1,6 +1,7 @@
 from congressionalrecord.parsing.base import BaseDocParser
 from congressionalrecord.parsing.body import CRBodyParser
 
+
 class CRHtmlParser(BaseDocParser):
 
     def parse(self, *args, **kwargs):
