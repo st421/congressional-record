@@ -1,48 +1,17 @@
 from bs4 import BeautifulSoup, NavigableString
 from html2ans.base import BaseHtmlAnsParser
-from html2ans.parsers.base import NullParser, BaseElementParser, ParseResult
+from html2ans.parsers.base import NullParser
 from html2ans.parsers.text import ParagraphParser
 
-from congressionalrecord.parsing.base import RegexNullElementParser, RegexTopLevelElementParser, RegexParagraphParser
-
-
-class ChamberParser(RegexTopLevelElementParser):
-    name = "doc_type"
-    regex_el = "chamber"
-    applicable_regex = r'\[(?P<chamber>[A-Za-z\s]+)\]'
-
-
-class PageParser(RegexTopLevelElementParser):
-    name = "page"
-    regex_el = "pages"
-    applicable_regex = r'\[Page[s]? (?P<pages>[\w\-]+)\]'
-
-
-class SourceParser(RegexNullElementParser):
-    name = "source"
-    applicable_regex = r'From the Congressional Record Online'\
-        + r' through the Government (Publishing|Printing) Office \[www.gpo.gov\]$'
-
-
-class HeaderParser(RegexNullElementParser):
-    name = "header"
-    applicable_regex = r'^\[Congressional Record Volume (?P<vol>[0-9]+), Number (?P<num>[0-9]+)'\
-        + r' \((?P<wkday>[A-Za-z]+), (?P<month>[A-Za-z]+) (?P<day>[0-9]+), (?P<year>[0-9]{4})\)\]'
-
-
-class RollCallParser(RegexTopLevelElementParser):
-    name = "rollcall"
-    applicable_regex = r'\[Roll(call)?( Vote)? No. \d+.*\]'
-
-
-class TitleParser(RegexTopLevelElementParser):
-    name = "title"
-    regex_el = "title"
-    applicable_regex = r'^ \s*(?P<title>([A-Z0-9.,]+[^a-z]+))$'
-
-
-class SeparatorParser(RegexNullElementParser):
-    applicable_regex = r'^ \s*[_]+\s*$'
+from congressionalrecord.parsing.elements import (
+    HeaderParser,
+    ChamberParser,
+    PageParser,
+    TitleParser,
+    SeparatorParser,
+    RollCallParser,
+    SpeakerParser,
+    SourceParser)
 
 
 class CRBodyParser(BaseHtmlAnsParser):
@@ -52,6 +21,7 @@ class CRBodyParser(BaseHtmlAnsParser):
         ChamberParser(),
         PageParser(),
         SourceParser(),
+        SpeakerParser(),
         TitleParser(),
         SeparatorParser(),
         RollCallParser(),

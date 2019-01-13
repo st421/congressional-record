@@ -1,14 +1,15 @@
 from __future__ import absolute_import
 
-import logging
 import json
+import logging
 import os
-from bs4 import BeautifulSoup
-from datetime import datetime, timedelta
-from zipfile import ZipFile
+from datetime import datetime
 from io import BytesIO
+from zipfile import ZipFile
 
-from congressionalrecord.parsing.doc import CRHtmlParser, CRChamberHtmlParser, CRDailyDigestHtmlParser, CRExtensionsHtmlParser
+from congressionalrecord.parsing.doc import (CRChamberHtmlParser,
+                                             CRDailyDigestHtmlParser,
+                                             CRExtensionsHtmlParser)
 from congressionalrecord.retriever import CRRetriever
 
 LOG = logging.getLogger(__name__)

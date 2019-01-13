@@ -1,9 +1,7 @@
 import re
 import os
-from bs4 import BeautifulSoup, NavigableString
-from html2ans.base import BaseHtmlAnsParser
+from bs4 import NavigableString
 from html2ans.parsers.base import NullParser, BaseElementParser, ParseResult
-from html2ans.parsers.text import ParagraphParser
 
 
 class BaseParser(object):
@@ -26,6 +24,7 @@ class RegexElementParser(BaseElementParser):
     applicable_elements = [NavigableString]
     applicable_regex = None
     regex_el = None
+    content_type = None
 
     def __init__(self, *args, **kwargs):
         self.regex_result = None
@@ -38,9 +37,20 @@ class RegexElementParser(BaseElementParser):
                 return True
         return False
 
+    def parse(self, element, *args, **kwargs):
+        if self.regex_el:
+            content = self.regex_result.group(self.regex_el)
+        else:
+            content = None
+        return ParseResult({
+            "type": self.content_type,
+            "content": content,
+        }, True)
+
 
 class RegexNullElementParser(RegexElementParser, NullParser):
-    pass
+    def parse(self, *args, **kwargs):
+        return NullParser.parse(self, *args, **kwargs)
 
 
 class RegexTopLevelElementParser(RegexElementParser):
@@ -49,13 +59,5 @@ class RegexTopLevelElementParser(RegexElementParser):
     def parse(self, element, *args, **kwargs):
         return ParseResult({
             self.name: self.regex_result.group(self.regex_el),
-            "kind": "top-level"
-        }, True)
-
-
-class RegexParagraphParser(RegexElementParser):
-
-    def parse(self, element, *args, **kwargs):
-        return ParseResult({
-            "text": self.regex_result.group(self.regex_el)
+            "type": "top-level"
         }, True)

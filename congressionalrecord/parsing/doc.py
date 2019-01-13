@@ -1,6 +1,3 @@
-import re
-import inspect
-from bs4 import BeautifulSoup
 from congressionalrecord.parsing.base import BaseDocParser
 from congressionalrecord.parsing.body import CRBodyParser
 
@@ -13,8 +10,8 @@ class CRHtmlParser(BaseDocParser):
         parsed_body = CRBodyParser().generate_ans(self.in_data, start_tag="pre")
         parsed_content = []
         for parsed_item in parsed_body:
-            if parsed_item.get("kind") == "top-level":
-                parsed_item.pop("kind")
+            if parsed_item.get("type") == "top-level":
+                parsed_item.pop("type")
                 output.update(parsed_item)
             else:
                 parsed_content.append(parsed_item)
