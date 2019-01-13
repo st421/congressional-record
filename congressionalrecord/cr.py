@@ -51,7 +51,7 @@ class CRManager(object):
         raise NotImplementedError()
 
 
-class LocalCRManager(CRManager):
+class YieldingCRManager(CRManager):
 
     def __init__(self, day, *args, base_output_dir="output", **kwargs):
         super().__init__(day, *args, **kwargs)
@@ -95,20 +95,33 @@ class LocalCRManager(CRManager):
         if cr_data:
             LOG.info("Extracting data to %s", self.output_dir)
             with ZipFile(BytesIO(cr_data)) as out_data:
-                out_data.extractall(self.output_dir)
+                out_data.extractall(self.base_output_dir)
         else:
             LOG.info("No data to extract for %s", self.day)
 
     def parse(self, **kwargs):
-        if self.output_format:
-            subfolder = os.path.join(self.output_dir, self.output_format)
-            if not os.path.isdir(subfolder):
-                os.makedirs(subfolder)
         # TODO do something with mods
         for html_file in self.html:
             for doc_type in self.PARSER_CLASSES:
                 if f"Pg{doc_type}" in html_file.name:
-                    print(json.dumps(self.PARSER_CLASSES.get(doc_type)(html_file).parse(), indent=2))
+                    yield os.path.basename(html_file.name), self.PARSER_CLASSES.get(doc_type)(html_file).parse()
+
+
+class LocalCRManager(YieldingCRManager):
+
+    def __init__(self, *args, parsed_output_folder=None, **kwargs):
+        super().__init__(*args, **kwargs)
+        if self.output_format and not parsed_output_folder:
+            parsed_output_folder = os.path.join(self.output_dir, self.output_format)
+            if not os.path.isdir(parsed_output_folder):
+                os.makedirs(parsed_output_folder)
+        self.parsed_output_folder = parsed_output_folder
+
+    def parse(self, **kwargs):
+        self.write(super().parse(**kwargs))
+
+    def write(self, data, **kwargs):
+        raise NotImplementedError()
 
 
 class LocalJsonCRManager(LocalCRManager):
@@ -116,7 +129,7 @@ class LocalJsonCRManager(LocalCRManager):
     def __init__(self, day, *args, **kwargs):
         super().__init__(day, *args, output_format="json", **kwargs)
 
-    def parse(self, **kwargs):
-        for crfile in super().parse():
-            with open(os.path.join(self.output_dir, self.output_format, crfile.filepath), 'w') as out_json:
-                json.dump(crfile.crdoc, out_json)
+    def write(self, data, **kwargs):
+        for file_name, parsed in data:
+            with open(os.path.join(self.output_dir, self.output_format, file_name.replace(".htm", ".json")), 'w') as out_file:
+                json.dump(parsed, out_file)
