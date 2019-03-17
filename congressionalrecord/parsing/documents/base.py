@@ -1,14 +1,21 @@
-from congressionalrecord.parsing.base import BaseDocParser
-from congressionalrecord.parsing.body import CRBodyParser
+import os
+from congressionalrecord.parsing.body import BodyParser
 
 
-class CRHtmlParser(BaseDocParser):
+class DocParser(object):
+
+    def __init__(self, cr_file, body_parser=None, *args, **kwargs):
+        self.doc_id = os.path.basename(cr_file.name.split(".htm")[0])
+        self.in_data = cr_file.read()
+        if not body_parser:
+            body_parser = BodyParser()
+        self.body_parser = body_parser
 
     def parse(self, *args, **kwargs):
         output = {
             "id": self.doc_id,
         }
-        parsed_body = CRBodyParser().generate_ans(self.in_data, start_tag="pre")
+        parsed_body = self.body_parser.generate_ans(self.in_data, start_tag="pre")
         parsed_content = []
         for parsed_item in parsed_body:
             if parsed_item.get("type") == "top-level":
@@ -19,17 +26,6 @@ class CRHtmlParser(BaseDocParser):
         output["content"] = parsed_content
         return output
 
-
-class CRChamberHtmlParser(CRHtmlParser):
-    pass
-
-
-class CRExtensionsHtmlParser(CRHtmlParser):
-    pass
-
-
-class CRDailyDigestHtmlParser(CRHtmlParser):
-    pass
 
 '''
     def get_header(self):

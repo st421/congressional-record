@@ -10,3 +10,4 @@ dbfiles/
 *.egg-info
 .vscode
 .DS_Store
+.pytest_cache

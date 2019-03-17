@@ -11,11 +11,13 @@ setup(
     packages=find_packages(),
     install_requires=[
         'beautifulsoup4 >= 4.4.0',
+        'click < 8.0',
+        'html2ans >= 3.0.0',
+        'jmespath'
         'lxml >= 3.3.5',
         'requests',
-        'click < 8.0',
         'xmltodict',
-        'jmespath'
-        ],
+        'python-dateutil'
+    ],
     zip_safe=False
 )

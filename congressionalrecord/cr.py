@@ -7,9 +7,9 @@ from datetime import datetime
 from io import BytesIO
 from zipfile import ZipFile
 
-from congressionalrecord.parsing.doc import (CRChamberHtmlParser,
-                                             CRDailyDigestHtmlParser,
-                                             CRExtensionsHtmlParser)
+from congressionalrecord.parsing.documents.daily_digest import DailyDigestParser
+from congressionalrecord.parsing.documents.chambers import HouseParser, SenateParser
+from congressionalrecord.parsing.documents.extensions import ExtensionsParser
 from congressionalrecord.retriever import CRRetriever
 
 LOG = logging.getLogger(__name__)
@@ -20,13 +20,13 @@ class CRManager(object):
     CR_PREFIX = "CREC-"
     DEFAULT_SKIP_PARSING = ['-Pgnull', 'FrontMatter']
     PARSER_CLASSES = {
-        'H': CRChamberHtmlParser,
-        'S': CRChamberHtmlParser,
-        'D': CRDailyDigestHtmlParser,
-        'E': CRExtensionsHtmlParser
+        'H': HouseParser,
+        'S': SenateParser,
+        'D': DailyDigestParser,
+        'E': ExtensionsParser
     }
 
-    def __init__(self, day, retriever=None, *, skip_parsing_for=None, output_format=None, **kwargs):
+    def __init__(self, day, retriever=None, *, skip_parsing_for=None, output_format=None, base_output_dir="output", **kwargs):
         if not retriever:
             retriever = CRRetriever()
         if isinstance(day, str):
@@ -34,10 +34,16 @@ class CRManager(object):
         if not skip_parsing_for:
             skip_parsing_for = self.DEFAULT_SKIP_PARSING
 
+        self.base_output_dir = base_output_dir
         self.skip_parsing_for = skip_parsing_for
         self.output_format = output_format
         self.retriever = retriever
         self.day = day
+
+    def __call__(self):
+        if not os.path.isdir(self.html_dir):
+            self.extract(self.retriever.get_cr(self.filename + ".zip"))
+        self.parse()
 
     @property
     def filename(self):
@@ -47,21 +53,6 @@ class CRManager(object):
     def build_filename(cls, day, **kwargs):
         day_str = datetime.strftime(day, cls.DATE_FORMAT)
         return f"{cls.CR_PREFIX}{day_str}"
-
-    def __call__(self):
-        raise NotImplementedError()
-
-
-class YieldingCRManager(CRManager):
-
-    def __init__(self, day, *args, base_output_dir="output", **kwargs):
-        super().__init__(day, *args, **kwargs)
-        self.base_output_dir = base_output_dir
-
-    def __call__(self):
-        if not os.path.isdir(self.html_dir):
-            self.extract(self.retriever.get_cr(self.filename + ".zip"))
-        self.parse()
 
     @property
     def output_dir(self):
@@ -100,6 +91,11 @@ class YieldingCRManager(CRManager):
         else:
             LOG.info("No data to extract for %s", self.day)
 
+    def parse(self, **kwargs):
+        raise NotImplementedError()
+
+
+class YieldingCRManager(CRManager):
     def parse(self, **kwargs):
         # TODO do something with mods
         for html_file in self.html:

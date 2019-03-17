@@ -1,0 +1,10 @@
+-e .
+
+autopep8
+pycodestyle
+pyflakes
+pylint
+pytest-cov
+tox
+tox-battery
+pytest
