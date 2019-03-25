@@ -1,5 +1,5 @@
 import os
-from congressionalrecord.parsing.sections import BodyParser
+from congressionalrecord.parsing.sections import SectionParser
 
 
 class DocParser(object):
@@ -8,7 +8,7 @@ class DocParser(object):
         self.doc_id = os.path.basename(cr_file.name.split(".htm")[0])
         self.in_data = cr_file.read()
         if not body_parser:
-            body_parser = BodyParser()
+            body_parser = SectionParser()
         self.body_parser = body_parser
 
     def parse(self, *args, **kwargs):
