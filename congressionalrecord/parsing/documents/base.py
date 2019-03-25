@@ -1,5 +1,5 @@
 import os
-from congressionalrecord.parsing.body import BodyParser
+from congressionalrecord.parsing.sections import BodyParser
 
 
 class DocParser(object):

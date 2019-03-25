@@ -18,7 +18,7 @@ LOG = logging.getLogger(__name__)
 class CRManager(object):
     DATE_FORMAT = "%Y-%m-%d"
     CR_PREFIX = "CREC-"
-    DEFAULT_SKIP_PARSING = ['-Pgnull', 'FrontMatter']
+    DEFAULT_SKIP_PARSING = ['null', 'E', ]
     PARSER_CLASSES = {
         'H': HouseParser,
         'S': SenateParser,
@@ -77,9 +77,9 @@ class CRManager(object):
             html_path = os.path.join(self.html_dir, html_file)
             skip = False
             for skip_str in self.skip_parsing_for:
-                if skip_str in html_path:
+                if f"-Pg{skip_str}" in html_path:
                     skip = True
-            if not skip:
+            if not (skip or "FrontMatter" in html_path):
                 html_files.append(open(html_path, 'r'))
         return html_files
 

@@ -5,7 +5,8 @@ from html2ans.parsers.text import ParagraphParser
 from congressionalrecord.parsing.elements import (
     HeaderParser,
     ChamberParser,
-    PageParser,
+    PrimaryPageParser,
+    SecondaryPageParser,
     SourceParser,
     SpeakerParser,
     TitleParser,
@@ -14,12 +15,17 @@ from congressionalrecord.parsing.elements import (
 
 
 
-class BodyParser(BaseHtmlAnsParser):
+class SectionParser(BaseHtmlAnsParser):
+
+    HEADER_PARSER = None
+
+    TERMINAL_PARSER = None
 
     DEFAULT_PARSERS = [
         HeaderParser(),
         ChamberParser(),
-        PageParser(),
+        PrimaryPageParser(),
+        SecondaryPageParser(),
         SourceParser(),
         SpeakerParser(),
         TitleParser(),
@@ -38,4 +44,32 @@ class BodyParser(BaseHtmlAnsParser):
     def generate_ans(self, html, *args, **kwargs):
         soup = BeautifulSoup(html, self.soup_parse_lib)
         lines = soup.html.body.pre.text.split('\n')
+        return self._parse_elements(list(map(NavigableString, lines)))
+
+
+class BodyParser(BaseHtmlAnsParser):
+
+    DEFAULT_PARSERS = [
+        HeaderParser(),
+        ChamberParser(),
+        PrimaryPageParser(),
+        SecondaryPageParser(),
+        SourceParser(),
+        SpeakerParser(),
+        TitleParser(),
+        SeparatorParser(),
+        RollCallParser(),
+        NullParser(),  # comments
+    ]
+
+    BACKUP_PARSERS = [
+        ParagraphParser()
+    ]
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, default_parsers=self.DEFAULT_PARSERS, **kwargs)
+
+    def generate_ans(self, html, *args, **kwargs):
+        soup = BeautifulSoup(html, self.soup_parse_lib)
+        lines = list(map(lambda line: line.strip(), soup.html.body.pre.text.split('\n')))
         return self._parse_elements(list(map(NavigableString, lines)))

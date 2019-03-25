@@ -34,12 +34,27 @@ class RegexElementParser(BaseElementParser):
 
 
 class DateElementParser(NullParser):
+    applicable_elements = [NavigableString]
+
     def is_applicable(self, element, *args, **kwargs):
         try:
             parse(element)
         except Exception:
             return False
         return True
+
+    def parse(self, *args, **kwargs):
+        return NullParser.parse(self, *args, **kwargs)
+
+
+class StringMatchingParser(NullParser):
+    applicable_elements = [NavigableString]
+    applicable_strings = []
+
+    def is_applicable(self, element, *args, **kwargs):
+        if element in self.applicable_strings:
+            return True
+        return False
 
     def parse(self, *args, **kwargs):
         return NullParser.parse(self, *args, **kwargs)
@@ -66,10 +81,14 @@ class ChamberParser(RegexTopLevelElementParser):
     applicable_regex = r'\[(?P<chamber>[A-Za-z\s]+)\]'
 
 
-class PageParser(RegexTopLevelElementParser):
+class PrimaryPageParser(RegexNullElementParser):
     name = "page"
-    regex_el = "pages"
     applicable_regex = r'\[Page[s]? (?P<pages>[\w\-]+)\]'
+
+
+class SecondaryPageParser(RegexNullElementParser):
+    name = "page"
+    applicable_regex = r'\[\[Page (?P<page>[\w\-]+)\]\]'
 
 
 class SourceParser(RegexNullElementParser):
