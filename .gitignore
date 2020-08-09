@@ -8,6 +8,7 @@ auxdata/
 dbfiles/
 .cache
 *.egg-info
+*.eggs
 .vscode
 .DS_Store
 .pytest_cache

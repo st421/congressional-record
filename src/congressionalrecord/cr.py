@@ -3,20 +3,17 @@ from __future__ import absolute_import
 import json
 import logging
 import os
-from datetime import datetime
 from io import BytesIO
 from zipfile import ZipFile
 
 from congressionalrecord.parsing.documents.daily_digest import DailyDigestParser
 from congressionalrecord.parsing.documents.chambers import HouseParser, SenateParser
 from congressionalrecord.parsing.documents.extensions import ExtensionsParser
-from congressionalrecord.retriever import CRRetriever
 
 LOG = logging.getLogger(__name__)
 
 
 class CRManager(object):
-    DATE_FORMAT = "%Y-%m-%d"
     CR_PREFIX = "CREC-"
     DEFAULT_SKIP_PARSING = ['null', 'E', ]
     PARSER_CLASSES = {
@@ -26,23 +23,23 @@ class CRManager(object):
         'E': ExtensionsParser
     }
 
-    def __init__(self, day, retriever=None, *, skip_parsing_for=None, output_format=None, base_output_dir="output", **kwargs):
-        if not retriever:
-            retriever = CRRetriever()
-        if isinstance(day, str):
-            day = datetime.strptime(day, self.DATE_FORMAT)
+    def __init__(
+            self,
+            day_str,
+            retriever,
+            *, skip_parsing_for=None, output_format=None, base_output_dir="output", **kwargs):
         if not skip_parsing_for:
             skip_parsing_for = self.DEFAULT_SKIP_PARSING
 
         self.base_output_dir = base_output_dir
         self.skip_parsing_for = skip_parsing_for
         self.output_format = output_format
+        self.day = day_str
         self.retriever = retriever
-        self.day = day
 
     def __call__(self):
         if not os.path.isdir(self.html_dir):
-            self.extract(self.retriever.get_cr(self.filename + ".zip"))
+            self.extract(self.retriever.get_zip(self.day))
         self.parse()
 
     @property
@@ -51,8 +48,7 @@ class CRManager(object):
 
     @classmethod
     def build_filename(cls, day, **kwargs):
-        day_str = datetime.strftime(day, cls.DATE_FORMAT)
-        return f"{cls.CR_PREFIX}{day_str}"
+        return f"{cls.CR_PREFIX}{day}"
 
     @property
     def output_dir(self):
@@ -61,6 +57,14 @@ class CRManager(object):
     @property
     def html_dir(self):
         return os.path.join(self.output_dir, 'html')
+
+    def extract(self, cr_data, **kwargs):
+        if cr_data:
+            LOG.info("Extracting data to %s", self.output_dir)
+            with ZipFile(BytesIO(cr_data)) as out_data:
+                out_data.extractall(self.base_output_dir)
+        else:
+            LOG.info("No data to extract for %s", self.day)
 
     @property
     def mods(self):
@@ -82,14 +86,6 @@ class CRManager(object):
             if not (skip or "FrontMatter" in html_path):
                 html_files.append(open(html_path, 'r'))
         return html_files
-
-    def extract(self, cr_data, **kwargs):
-        if cr_data:
-            LOG.info("Extracting data to %s", self.output_dir)
-            with ZipFile(BytesIO(cr_data)) as out_data:
-                out_data.extractall(self.base_output_dir)
-        else:
-            LOG.info("No data to extract for %s", self.day)
 
     def parse(self, **kwargs):
         raise NotImplementedError()
