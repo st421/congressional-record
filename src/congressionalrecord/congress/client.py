@@ -1,7 +1,6 @@
 import logging
 from datetime import datetime
 import requests
-from congressionalrecord.utils import DATE_FORMAT
 
 LOG = logging.getLogger(__name__)
 
@@ -24,6 +23,15 @@ class CongressClient(object):
         resp.raise_for_status()
         return resp.content
 
+    def get_cr_by_date(self, date, route, **kwargs):
+        date_with_slashes = datetime.strftime(date, "%Y/%m/%d")
+        return self.make_request(f"/{date_with_slashes}/{route}")
+
     def get_cr_daily_digest(self, date, **kwargs):
-        date_with_slashes = datetime.strftime(datetime.strptime(date, DATE_FORMAT), "%Y/%m/%d")
-        return self.make_request(f"/{date_with_slashes}/daily-digest")
+        return self.get_cr_by_date(date, "daily-digest")
+
+    def get_cr_senate_section(self, date, **kwargs):
+        return self.get_cr_by_date(date, "senate-section")
+
+    def get_cr_house_section(self, date, **kwargs):
+        return self.get_cr_by_date(date, "house-section")

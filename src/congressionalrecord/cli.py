@@ -1,13 +1,13 @@
 import os
+import json
 import logging
 from datetime import datetime, timedelta
 import click
-from congressionalrecord.clients.govinfo import GovInfoClient
-from congressionalrecord.clients.congress import CongressClient
-from congressionalrecord.cr import YieldingCRManager, LocalJsonCRManager
+from congressionalrecord.govinfo.client import GovInfoClient
+from congressionalrecord.congress.client import CongressClient
+from congressionalrecord.govinfo.cr import CRManager, LocalJsonCRManager
+from congressionalrecord.congress.parsers.docs.chambers import SenateRecordParser
 from congressionalrecord.utils import DATE_FORMAT
-
-API_KEY = os.environ.get("GOVINFO_API_KEY")
 
 #FIXME should be able to exclude more than one
 
@@ -20,26 +20,30 @@ API_KEY = os.environ.get("GOVINFO_API_KEY")
 def cli(start, end=None, source=None, mode=None, exclude=None):
     """Download and parse the text of the Congressional Record."""
     logging.basicConfig(level=logging.DEBUG)
-    api_client = GovInfoClient(api_key=API_KEY)
-    #api_client = CongressClient()
 
-    if mode == 'json':
-        mgr = LocalJsonCRManager
-    else:
-        mgr = YieldingCRManager
+    if source == "govinfo":
+        client = GovInfoClient(api_key=os.environ.get("GOVINFO_API_KEY"))
+        if mode == "json":
+            mgr = LocalJsonCRManager
+        else:
+            mgr = CRManager
 
-    if exclude:
-        skip_parsing_for = list(exclude) + mgr.DEFAULT_SKIP_PARSING
-    else:
-        skip_parsing_for = None
+        if exclude:
+            skip_parsing_for = list(exclude) + mgr.DEFAULT_SKIP_PARSING
+        else:
+            skip_parsing_for = None
 
-    current = start
-    if not end:
-        end = start
-    while current <= end:
-        cr_manager = mgr(datetime.strftime(current, DATE_FORMAT), api_client, skip_parsing_for=skip_parsing_for)
-        cr_manager()
-        current += timedelta(days=1)
+        current = start
+        if not end:
+            end = start
+        while current <= end:
+            cr_manager = mgr(datetime.strftime(current, DATE_FORMAT), client, skip_parsing_for=skip_parsing_for)
+            cr_manager()
+            current += timedelta(days=1)
+    elif source == "congress":
+        client = CongressClient()
+        senate_html = client.get_cr_senate_section(start)
+        print(json.dumps(SenateRecordParser().generate_ans(senate_html, start_tag="tbody"), indent=2))
 
 
 if __name__ == '__main__':

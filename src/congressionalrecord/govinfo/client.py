@@ -5,7 +5,7 @@ LOG = logging.getLogger(__name__)
 
 
 class GovInfoClient(object):
-    BASE_URL = 'https://www.govinfo.gov/content/pkg'
+    BASE_URL = 'https://api.govinfo.gov/packages'
 
     def __init__(self, session=None, *args, api_key=None, **kwargs):
         if not session:
@@ -19,9 +19,9 @@ class GovInfoClient(object):
     def make_request(self, route, **kwargs):
         url = self.BASE_URL + route
         LOG.info("Requesting data at %s", url)
-        resp = self.session.get(url)
+        resp = self.session.get(url, timeout=15)
         resp.raise_for_status()
         return resp.content
 
     def get_zip(self, date, **kwargs):
-        return self.make_request(f"/CREC-{date}.zip")
+        return self.make_request(f"/CREC-{date}/zip")

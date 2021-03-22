@@ -1,33 +1,23 @@
+import os
 from bs4 import BeautifulSoup, NavigableString
 from html2ans.base import BaseHtmlAnsParser
-from html2ans.parsers.base import NullParser
 from html2ans.parsers.text import ParagraphParser
-from congressionalrecord.parsing.elements import (
+from congressionalrecord.govinfo.parsers.elements import (
     HeaderParser,
-    ChamberParser,
     PrimaryPageParser,
     SecondaryPageParser,
     SourceParser,
     SpeakerParser,
     TitleParser,
+    JournalParser,
+    PrayerParser,
     SeparatorParser,
     RollCallParser)
 
 
-class SectionParser(BaseHtmlAnsParser):
-    DEFAULT_PARSERS = [
-        HeaderParser(),
-        ChamberParser(),
-        PrimaryPageParser(),
-        SecondaryPageParser(),
-        SourceParser(),
-        SpeakerParser(),
-        TitleParser(),
-        SeparatorParser(),
-        RollCallParser(),
-        NullParser(),  # comments
-    ]
+class DocParser(BaseHtmlAnsParser):
 
+    DEFAULT_PARSERS = []
     BACKUP_PARSERS = [
         ParagraphParser()
     ]
@@ -55,3 +45,17 @@ class SectionParser(BaseHtmlAnsParser):
         else:
             section_lines = lines
         return self._parse_elements(section_lines)
+
+    def parse(self, data, doc_id, **kwargs):
+        output = {
+            "id": doc_id,
+            "content": []
+        }
+        parsed_item_raw = self.generate_ans(data, start_tag="pre")
+        for sub_item in parsed_item_raw:
+            if sub_item.get("type") == "top-level":
+                sub_item.pop("type")
+                output.update(sub_item)
+            else:
+                output["content"].append(sub_item)
+        return output

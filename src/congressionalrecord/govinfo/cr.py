@@ -6,16 +6,16 @@ import os
 from io import BytesIO
 from zipfile import ZipFile
 
-from congressionalrecord.parsing.documents.daily_digest import DailyDigestParser
-from congressionalrecord.parsing.documents.chambers import HouseParser, SenateParser
-from congressionalrecord.parsing.documents.extensions import ExtensionsParser
+from congressionalrecord.govinfo.parsers.docs.daily_digest import DailyDigestParser
+from congressionalrecord.govinfo.parsers.docs.chambers import HouseParser, SenateParser
+from congressionalrecord.govinfo.parsers.docs.extensions import ExtensionsParser
 
 LOG = logging.getLogger(__name__)
 
 
 class CRManager(object):
     CR_PREFIX = "CREC-"
-    DEFAULT_SKIP_PARSING = ['null', 'E', ]
+    DEFAULT_SKIP_PARSING = ['null', 'E', 'S', 'D']
     PARSER_CLASSES = {
         'H': HouseParser,
         'S': SenateParser,
@@ -27,7 +27,13 @@ class CRManager(object):
             self,
             day_str,
             retriever,
-            *, skip_parsing_for=None, output_format=None, base_output_dir="output", **kwargs):
+            *,
+            skip_parsing_for=None,
+            output_format=None,
+            base_output_dir="output",
+            force_fetch=False,
+            **kwargs
+        ):
         if not skip_parsing_for:
             skip_parsing_for = self.DEFAULT_SKIP_PARSING
 
@@ -36,9 +42,10 @@ class CRManager(object):
         self.output_format = output_format
         self.day = day_str
         self.retriever = retriever
+        self.force_fetch = force_fetch
 
     def __call__(self):
-        if not os.path.isdir(self.html_dir):
+        if not os.path.isdir(self.html_dir) and not self.force_fetch:
             self.extract(self.retriever.get_zip(self.day))
         self.parse()
 
@@ -88,19 +95,16 @@ class CRManager(object):
         return html_files
 
     def parse(self, **kwargs):
-        raise NotImplementedError()
-
-
-class YieldingCRManager(CRManager):
-    def parse(self, **kwargs):
         # TODO do something with mods
         for html_file in self.html:
             for doc_type in self.PARSER_CLASSES:
                 if f"Pg{doc_type}" in html_file.name:
-                    yield os.path.basename(html_file.name), self.PARSER_CLASSES.get(doc_type)(html_file).parse()
+                    doc_id = os.path.basename(html_file.name.split(".htm")[0])
+                    raw_data = html_file.read()
+                    yield os.path.basename(html_file.name), self.PARSER_CLASSES.get(doc_type)().parse(raw_data, doc_id)
 
 
-class LocalCRManager(YieldingCRManager):
+class LocalCRManager(CRManager):
 
     def __init__(self, *args, parsed_output_folder=None, **kwargs):
         super().__init__(*args, **kwargs)
